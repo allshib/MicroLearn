@@ -2,3 +2,4 @@
 получить деплоймент: kubectl get deployments
 Получить капсулы: kubectl get pods
 удалить развертывание: kubectl delete deployment platforms-depl
+перезапустить развертывание: kubectl rollout restart deployment platforms-depl

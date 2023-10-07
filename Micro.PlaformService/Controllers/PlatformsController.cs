@@ -2,6 +2,7 @@
 using Micro.PlaformService.Data;
 using Micro.PlaformService.Dtos;
 using Micro.PlaformService.Models;
+using Micro.PlaformService.SyncDataServicesHttp;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Micro.PlaformService.Controllers
@@ -13,10 +14,12 @@ namespace Micro.PlaformService.Controllers
     {
         private readonly IPlatformRepo _repository;
         private readonly IMapper _mapper;
+        private readonly ICommandDataClient _dataClient;
 
-        public PlatformsController(IPlatformRepo repository, IMapper mapper) {
+        public PlatformsController(IPlatformRepo repository, IMapper mapper, ICommandDataClient dataClient) {
             _repository = repository;
             _mapper = mapper;
+            _dataClient = dataClient;
         }
 
         [HttpGet]
@@ -40,15 +43,33 @@ namespace Micro.PlaformService.Controllers
         }
 
         [HttpPost]
-        public ActionResult<PlatformCreateDto> CreatePlatform(PlatformCreateDto platformCreateDto)
+        public async Task<ActionResult<PlatformCreateDto>> CreatePlatform(PlatformCreateDto platformCreateDto)
         { 
             var platformModel = _mapper.Map<Platform>(platformCreateDto);
             _repository.CreatePlaform(platformModel);
 
+
+
             if (!_repository.SaveChanges())
                 this.BadRequest();
 
+            
+
             var platformRead = _mapper.Map<PlatformReadDto>(platformModel);
+
+            try
+            {
+                await _dataClient.SendPlatformToCommand(platformRead);
+            }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine($"Не удалось отправить синхронно: {ex.Message}");
+            }
+            
+
+
+
             return CreatedAtRoute(nameof(GetPlatformById), new {Id = platformRead.Id}, platformRead);
         }
     }
