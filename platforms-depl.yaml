@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platforms-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: microplaformservice
+  template:
+    metadata:
+      labels:
+        app: microplaformservice
+    spec:
+      containers:
+        - name: microplaformservice
+          image: alexzeeker/microplaformservice:1.1
