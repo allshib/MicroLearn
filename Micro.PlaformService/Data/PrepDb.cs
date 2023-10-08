@@ -1,18 +1,36 @@
-﻿namespace Micro.PlaformService.Data
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace Micro.PlaformService.Data
 {
     public static class PrepDb
     {
-        public static void PrepPopulation(IApplicationBuilder app)
+        public static void PrepPopulation(IApplicationBuilder app, bool isProd)
         {
             using(var servicScope = app.ApplicationServices.CreateScope())
             {
-                SeedData(servicScope.ServiceProvider.GetService<AppDbContext>());
+                SeedData(servicScope.ServiceProvider.GetService<AppDbContext>(), isProd);
             }
 
         }   
 
-        private static void SeedData(AppDbContext context)
+        private static void SeedData(AppDbContext context, bool isProd)
         {
+            if(isProd)
+            {
+                Console.WriteLine("Миграция начата");
+                try
+                {
+                    context.Database.Migrate();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Миграция не удалась: {ex.Message}");
+                }
+                
+            }
+
+
             if(!context.Platforms.Any()) {
                 Console.WriteLine("--> Seeding Date... ");
 
