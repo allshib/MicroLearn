@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Micro.PlaformService.AsyncDataServices;
 using Micro.PlaformService.Data;
 using Micro.PlaformService.Dtos;
 using Micro.PlaformService.Models;
@@ -15,11 +16,13 @@ namespace Micro.PlaformService.Controllers
         private readonly IPlatformRepo _repository;
         private readonly IMapper _mapper;
         private readonly ICommandDataClient _dataClient;
+        private readonly IMessageBusClient _messageBusClient;
 
-        public PlatformsController(IPlatformRepo repository, IMapper mapper, ICommandDataClient dataClient) {
+        public PlatformsController(IPlatformRepo repository, IMapper mapper, ICommandDataClient dataClient, IMessageBusClient messageBusClient) {
             _repository = repository;
             _mapper = mapper;
             _dataClient = dataClient;
+            _messageBusClient = messageBusClient;
         }
 
         [HttpGet]
@@ -56,7 +59,10 @@ namespace Micro.PlaformService.Controllers
             
 
             var platformRead = _mapper.Map<PlatformReadDto>(platformModel);
+            
 
+
+            //Sync
             try
             {
                 await _dataClient.SendPlatformToCommand(platformRead);
@@ -66,7 +72,21 @@ namespace Micro.PlaformService.Controllers
 
                 Console.WriteLine($"Не удалось отправить синхронно: {ex.Message}");
             }
+
             
+
+            //Async
+            try
+            {
+                var platformPublish = _mapper.Map<PlatformPublishedDto>(platformRead);
+                platformPublish.Event = "Platform_Published";
+                _messageBusClient.PublishNewPlatform(platformPublish);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Не удалось отправить асинхронно: {ex.Message}");
+            }
+
 
 
 
